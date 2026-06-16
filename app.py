@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 import os
 import uuid
+import gdown
 
 app = Flask(__name__)
 
@@ -14,9 +15,34 @@ IMG_SIZE = (128, 128)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Load model & class names
-model = tf.keras.models.load_model('best_plant_model.keras')
+# --- PROSES DOWNLOAD & LOAD MODEL DARI GOOGLE DRIVE ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_1_PATH = os.path.join(BASE_DIR, 'best_plant_model.keras')
+MODEL_2_PATH = os.path.join(BASE_DIR, 'model_cnn_plantvillage.keras')
 
+# Pastikan folder upload ada sebelum aplikasi jalan
+os.makedirs(os.path.join(BASE_DIR, UPLOAD_FOLDER), exist_ok=True)
+
+# Otomatis download Model 1 jika belum ada di server Railway
+if not os.path.exists(MODEL_1_PATH):
+    print("Mendownload best_plant_model.keras dari Google Drive...")
+    id_model1 = '1C7D9vI62S_Fm0Sg9zE9_R2O8f5G3j8Z_'
+    url_model1 = f'https://drive.google.com/uc?id={id_model1}'
+    gdown.download(url_model1, MODEL_1_PATH, quiet=False)
+
+# Otomatis download Model 2 jika belum ada di server Railway
+if not os.path.exists(MODEL_2_PATH):
+    print("Mendownload model_cnn_plantvillage.keras dari Google Drive...")
+    id_model2 = '16u3v09XmKsc_4X7VwWc3FwL_Z7O8T2S_'
+    url_model2 = f'https://drive.google.com/uc?id={id_model2}'
+    gdown.download(url_model2, MODEL_2_PATH, quiet=False)
+
+# Load model utama yang dipakai untuk aplikasi Flask
+model = tf.keras.models.load_model(MODEL_1_PATH)
+# Jika suatu saat kamu mau pakai model cnn satunya, tinggal hilangkan pagar di bawah:
+# model_cnn = tf.keras.models.load_model(MODEL_2_PATH)
+
+# --- LOAD CLASS NAMES ---
 with open('class_names.txt', 'r') as f:
     class_names = [line.strip() for line in f.readlines()]
 
@@ -89,5 +115,4 @@ def predict():
     )
 
 if __name__ == '__main__':
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     app.run(debug=True)
