@@ -1,0 +1,16 @@
+venv/
+__pycache__/
+*.pyc
+
+model_cnn_plantvillage.keras
+cnn_plantvillage.py
+confusion_matrix.png
+contoh_dataset.png
+grafik_pelatihan.png
+laporan_klasifikasi.txt
+prediksi_contoh.png
+
+static/uploads/*
+!static/uploads/.gitkeep
+best_plant_model.keras
+model_cnn_plantvillage.keras

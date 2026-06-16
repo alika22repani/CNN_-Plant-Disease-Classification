@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeafScan AI — Deteksi Penyakit Daun</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <!-- LOADING OVERLAY -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <p>🌿 Sedang menganalisis daun kamu...</p>
+    </div>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <span class="logo-icon">🌿</span>
+            <span>Leaf<em>Scan</em> AI</span>
+        </a>
+        <div class="nav-badge">🤖 CNN PlantVillage</div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+        <span class="hero-emoji">🍃</span>
+        <h1>Deteksi <span>Penyakit Daun</span><br>dengan Kecerdasan Buatan</h1>
+        <p>Upload foto daun tanaman kamu, dan biarkan AI kami menganalisis kesehatannya secara instan!</p>
+        <div class="hero-stats">
+            <div class="stat-item">
+                <span class="num">38</span>
+                <span class="desc">Kelas Penyakit</span>
+            </div>
+            <div class="stat-item">
+                <span class="num">24K+</span>
+                <span class="desc">Data Training</span>
+            </div>
+            <div class="stat-item">
+                <span class="num">CNN</span>
+                <span class="desc">Deep Learning</span>
+            </div>
+            <div class="stat-item">
+                <span class="num">15</span>
+                <span class="desc">Epoch Training</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- MAIN -->
+    <main class="main-container">
+
+        <!-- UPLOAD CARD -->
+        <div class="upload-card">
+            <div class="card-header">
+                <h2>📤 Upload Foto Daun</h2>
+                <p>Pastikan foto jelas, fokus pada daun, dan cahaya cukup</p>
+            </div>
+            <div class="card-body">
+
+                {% if error %}
+                <div class="alert-error">
+                    ⚠️ {{ error }}
+                </div>
+                {% endif %}
+
+                <form action="/predict" method="POST" enctype="multipart/form-data" id="uploadForm">
+
+                    <!-- DROPZONE -->
+                    <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+                        <span class="dropzone-icon">🌱</span>
+                        <h3>Seret & Lepas foto di sini</h3>
+                        <p>atau klik tombol di bawah untuk memilih file</p>
+                        <button type="button" class="btn-browse">📁 Pilih Foto</button>
+                        <input type="file" id="fileInput" name="file" accept=".jpg,.jpeg,.png">
+                    </div>
+
+                    <!-- PREVIEW -->
+                    <div class="preview-section" id="previewSection">
+                        <img src="" alt="preview" class="preview-img" id="previewImg">
+                        <div class="preview-info">
+                            <div class="file-name" id="fileName">—</div>
+                            <div class="file-size" id="fileSize">—</div>
+                        </div>
+                        <button type="button" class="btn-remove" onclick="removeFile()" title="Hapus">✕</button>
+                    </div>
+
+                    <button type="submit" class="btn-predict" id="btnPredict" disabled>
+                        🔍 Analisis Sekarang
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- INFO CARDS -->
+        <div class="info-section">
+            <div class="info-card">
+                <span class="icon">🍎</span>
+                <h4>Apple, Grape, Tomato</h4>
+                <p>Deteksi penyakit pada berbagai jenis tanaman buah & sayur</p>
+            </div>
+            <div class="info-card">
+                <span class="icon">⚡</span>
+                <h4>Analisis Cepat</h4>
+                <p>Hasil prediksi dalam hitungan detik menggunakan deep learning</p>
+            </div>
+            <div class="info-card">
+                <span class="icon">🎯</span>
+                <h4>Top 3 Prediksi</h4>
+                <p>Menampilkan 3 kemungkinan teratas lengkap dengan tingkat keyakinan</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+        <p>🌿 <span>LeafScan AI</span> — Tugas CNN Praktikum Kecerdasan Buatan</p>
+        <p style="margin-top:6px; font-size:12px;">Dataset: PlantVillage · Model: CNN TensorFlow/Keras</p>
+    </footer>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const dropzone = document.getElementById('dropzone');
+        const previewSection = document.getElementById('previewSection');
+        const previewImg = document.getElementById('previewImg');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const btnPredict = document.getElementById('btnPredict');
+        const uploadForm = document.getElementById('uploadForm');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        fileInput.addEventListener('change', function () {
+            if (this.files && this.files[0]) {
+                showPreview(this.files[0]);
+            }
+        });
+
+        function showPreview(file) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                previewImg.src = e.target.result;
+                fileName.textContent = file.name;
+                fileSize.textContent = (file.size / 1024).toFixed(1) + ' KB';
+                previewSection.classList.add('show');
+                btnPredict.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeFile() {
+            fileInput.value = '';
+            previewSection.classList.remove('show');
+            btnPredict.disabled = true;
+            previewImg.src = '';
+        }
+
+        // Drag & drop
+        dropzone.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('dragover');
+        });
+
+        dropzone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                fileInput.files = e.dataTransfer.files;
+                showPreview(file);
+            }
+        });
+
+        // Loading saat submit
+        uploadForm.addEventListener('submit', function () {
+            if (!fileInput.files[0]) return;
+            loadingOverlay.classList.add('show');
+        });
+    </script>
+
+</body>
+
+</html>

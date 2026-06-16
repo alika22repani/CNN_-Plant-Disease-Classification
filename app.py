@@ -1,0 +1,93 @@
+from flask import Flask, render_template, request, jsonify
+import tensorflow as tf
+import numpy as np
+from PIL import Image
+import os
+import uuid
+
+app = Flask(__name__)
+
+# Config
+UPLOAD_FOLDER = 'static/uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+IMG_SIZE = (128, 128)
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Load model & class names
+model = tf.keras.models.load_model('best_plant_model.keras')
+
+with open('class_names.txt', 'r') as f:
+    class_names = [line.strip() for line in f.readlines()]
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def predict_image(img_path):
+    img = Image.open(img_path).convert('RGB')
+    img = img.resize(IMG_SIZE)
+    img_array = np.array(img) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
+    
+    predictions = model.predict(img_array)
+    predicted_idx = np.argmax(predictions[0])
+    confidence = float(predictions[0][predicted_idx]) * 100
+    
+    # Top 3 prediksi
+    top3_idx = np.argsort(predictions[0])[::-1][:3]
+    top3 = [
+        {
+            'label': format_label(class_names[i]),
+            'confidence': round(float(predictions[0][i]) * 100, 2)
+        }
+        for i in top3_idx
+    ]
+    
+    return format_label(class_names[predicted_idx]), round(confidence, 2), top3
+
+def format_label(label):
+    # Ubah "Apple___Apple_scab" jadi "Apple - Apple Scab"
+    label = label.replace('___', ' - ')
+    label = label.replace('_', ' ')
+    return label.title()
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    if 'file' not in request.files:
+        return render_template('index.html', error='Tidak ada file yang diunggah!')
+    
+    file = request.files['file']
+    
+    if file.filename == '':
+        return render_template('index.html', error='Pilih file terlebih dahulu!')
+    
+    if not allowed_file(file.filename):
+        return render_template('index.html', error='Format file harus PNG, JPG, atau JPEG!')
+    
+    # Simpan file dengan nama unik
+    ext = file.filename.rsplit('.', 1)[1].lower()
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(filepath)
+    
+    # Prediksi
+    label, confidence, top3 = predict_image(filepath)
+    
+    # Tentukan status kesehatan
+    is_healthy = 'healthy' in label.lower()
+    
+    return render_template('result.html',
+        filename=filename,
+        label=label,
+        confidence=confidence,
+        top3=top3,
+        is_healthy=is_healthy
+    )
+
+if __name__ == '__main__':
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    app.run(debug=True)
