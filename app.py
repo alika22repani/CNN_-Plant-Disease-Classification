@@ -26,7 +26,7 @@ os.makedirs(os.path.join(BASE_DIR, UPLOAD_FOLDER), exist_ok=True)
 # Otomatis download Model 1 jika belum ada di server Railway
 if not os.path.exists(MODEL_1_PATH):
     print("Mendownload best_plant_model.keras dari Google Drive...")
-    id_model1 = '1C7D9vI62S_Fm0Sg9zE9_R2O8f5G3j8Z_'
+    id_model1 = '191qxbAlp6NSyRTANEwneFeVYe5303uJC'
     url_model1 = f'https://drive.google.com/uc?id={id_model1}'
     gdown.download(url_model1, MODEL_1_PATH, quiet=False)
 
