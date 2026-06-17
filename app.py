@@ -28,26 +28,23 @@ if not os.path.exists(MODEL_1_PATH):
     print("Mendownload best_plant_model.keras dari Google Drive...")
     id_model1 = '191qxbAlp6NSyRTANEwneFeVYe5303uJC'
     url_model1 = f'https://drive.google.com/uc?id={id_model1}'
-    gdown.download(url_model1, MODEL_1_PATH, quiet=False)
-
-# Otomatis download Model 2 jika belum ada di server Railway
-if not os.path.exists(MODEL_2_PATH):
-    print("Mendownload model_cnn_plantvillage.keras dari Google Drive...")
-    id_model2 = '16u3v09XmKsc_4X7VwWc3FwL_Z7O8T2S_'
-    url_model2 = f'https://drive.google.com/uc?id={id_model2}'
-    gdown.download(url_model2, MODEL_2_PATH, quiet=False)
+    gdown.download(url_model1, MODEL_1_PATH, quiet=False, fuzzy=True)
 
 # Load model utama yang dipakai untuk aplikasi Flask
 model = tf.keras.models.load_model(MODEL_1_PATH)
+
 # Jika suatu saat kamu mau pakai model cnn satunya, tinggal hilangkan pagar di bawah:
 # model_cnn = tf.keras.models.load_model(MODEL_2_PATH)
+
 
 # --- LOAD CLASS NAMES ---
 with open('class_names.txt', 'r') as f:
     class_names = [line.strip() for line in f.readlines()]
 
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 def predict_image(img_path):
     img = Image.open(img_path).convert('RGB')
@@ -71,15 +68,18 @@ def predict_image(img_path):
     
     return format_label(class_names[predicted_idx]), round(confidence, 2), top3
 
+
 def format_label(label):
     # Ubah "Apple___Apple_scab" jadi "Apple - Apple Scab"
     label = label.replace('___', ' - ')
     label = label.replace('_', ' ')
     return label.title()
 
+
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -113,6 +113,7 @@ def predict():
         top3=top3,
         is_healthy=is_healthy
     )
+
 
 if __name__ == '__main__':
     app.run(debug=True)
