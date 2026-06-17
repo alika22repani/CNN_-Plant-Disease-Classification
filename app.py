@@ -18,23 +18,21 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # --- PROSES DOWNLOAD & LOAD MODEL DARI GOOGLE DRIVE ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_1_PATH = os.path.join(BASE_DIR, 'best_plant_model.keras')
-MODEL_2_PATH = os.path.join(BASE_DIR, 'model_cnn_plantvillage.keras')
 
 # Pastikan folder upload ada sebelum aplikasi jalan
 os.makedirs(os.path.join(BASE_DIR, UPLOAD_FOLDER), exist_ok=True)
 
-# Otomatis download Model 1 jika belum ada di server Railway
+
+# Otomatis download Model jika belum ada di server Railway
 if not os.path.exists(MODEL_1_PATH):
     print("Mendownload best_plant_model.keras dari Google Drive...")
     id_model1 = '191qxbAlp6NSyRTANEwneFeVYe5303uJC'
     url_model1 = f'https://drive.google.com/uc?id={id_model1}'
-    gdown.download(url_model2, MODEL_2_PATH, quiet=False)
+    gdown.download(url_model1, MODEL_1_PATH, quiet=False)
+
 
 # Load model utama yang dipakai untuk aplikasi Flask
 model = tf.keras.models.load_model(MODEL_1_PATH)
-
-# Jika suatu saat kamu mau pakai model cnn satunya, tinggal hilangkan pagar di bawah:
-# model_cnn = tf.keras.models.load_model(MODEL_2_PATH)
 
 
 # --- LOAD CLASS NAMES ---
@@ -49,15 +47,18 @@ def allowed_file(filename):
 def predict_image(img_path):
     img = Image.open(img_path).convert('RGB')
     img = img.resize(IMG_SIZE)
+
     img_array = np.array(img) / 255.0
     img_array = np.expand_dims(img_array, axis=0)
     
     predictions = model.predict(img_array)
+
     predicted_idx = np.argmax(predictions[0])
     confidence = float(predictions[0][predicted_idx]) * 100
     
     # Top 3 prediksi
     top3_idx = np.argsort(predictions[0])[::-1][:3]
+
     top3 = [
         {
             'label': format_label(class_names[i]),
@@ -83,6 +84,7 @@ def index():
 
 @app.route('/predict', methods=['POST'])
 def predict():
+
     if 'file' not in request.files:
         return render_template('index.html', error='Tidak ada file yang diunggah!')
     
@@ -93,20 +95,27 @@ def predict():
     
     if not allowed_file(file.filename):
         return render_template('index.html', error='Format file harus PNG, JPG, atau JPEG!')
-    
+
+
     # Simpan file dengan nama unik
     ext = file.filename.rsplit('.', 1)[1].lower()
     filename = f"{uuid.uuid4().hex}.{ext}"
+
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
     file.save(filepath)
-    
+
+
     # Prediksi
     label, confidence, top3 = predict_image(filepath)
-    
+
+
     # Tentukan status kesehatan
     is_healthy = 'healthy' in label.lower()
-    
-    return render_template('result.html',
+
+
+    return render_template(
+        'result.html',
         filename=filename,
         label=label,
         confidence=confidence,
