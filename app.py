@@ -28,7 +28,7 @@ if not os.path.exists(MODEL_1_PATH):
     print("Mendownload best_plant_model.keras dari Google Drive...")
     id_model1 = '191qxbAlp6NSyRTANEwneFeVYe5303uJC'
     url_model1 = f'https://drive.google.com/uc?id={id_model1}'
-    gdown.download(url_model1, MODEL_1_PATH, quiet=False, fuzzy=True)
+    gdown.download(url_model2, MODEL_2_PATH, quiet=False)
 
 # Load model utama yang dipakai untuk aplikasi Flask
 model = tf.keras.models.load_model(MODEL_1_PATH)
